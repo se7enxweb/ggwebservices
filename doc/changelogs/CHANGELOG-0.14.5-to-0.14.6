@@ -1,0 +1,19 @@
+Changes from 0.14.5 to 0.14.6 - released 2026/10/21
+
+* New
+
+- the WS Debugger tab shows the `terminal` icon in the admin4 design (`Icon=terminal` in settings/menu.ini.append.php)
+
+* Fixed
+
+- the SOAP client transport (ggPhpSOAPClientTransport) loads on PHP 8: its __doRequest() signature matches
+  SoapClient's up to PHP 8.5, and its properties are declared
+
+* Improved
+
+- composer.json states the maintained repository, homepage, support links, authors, PHP 8, the installer name and
+  the optional PHP extensions (curl, zlib)
+- ezinfo.php and extension.xml state the version, the license (GPL v2.0 or any later version) and the website
+- README.md is a complete guide: installation with Composer and by hand, server and client settings, exposing and
+  calling webservices from PHP, templates and JavaScript, the debugger, permissions, the cron job and
+  troubleshooting

@@ -12,7 +12,7 @@ class ggwebservicesInfo
     {
         return array(
             'Name' => "GG Webservices extension",
-            'Version' => "0.14.5",
+            'Version' => "0.14.6",
             'Copyright' => "Copyright (C) 2009-2022 Gaetano Giunta, Copyright (C) 2026 7x",
             'License' => "GNU General Public License v2.0 (or any later version)",
             'Info_url' => "https://github.com/se7enxweb/ggwebservices",

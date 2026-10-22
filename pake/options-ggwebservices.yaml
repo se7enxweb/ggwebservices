@@ -4,7 +4,7 @@ extension:
 version:
     major: 0
     minor: 14
-    release: 0
+    release: 6
 
 ezp:
     version:

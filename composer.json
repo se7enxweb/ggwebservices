@@ -1,5 +1,5 @@
 {
-    "name": "gggeek/ggwebservices",
+    "name": "se7enxweb/ggwebservices",
     "description": "Webservices for Exponential: serve and call JSON-RPC, XML-RPC, REST and SOAP (with WSDL) from PHP and templates, a cross-domain proxy for Ajax calls, and a visual webservices debugger in the administration interface.",
     "type": "ezpublish-legacy-extension",
     "keywords": ["exponential", "exponential-extension", "ezpublish-legacy", "webservices", "jsonrpc", "xmlrpc", "soap", "wsdl", "rest", "debugger"],
@@ -37,6 +37,9 @@
     },
     "require-dev": {
         "gggeek/ezextensionbuilder": "*"
+    },
+    "replace": {
+        "gggeek/ggwebservices": "self.version"
     },
     "extra": {
         "installer-name": "ggwebservices",

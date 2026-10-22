@@ -1,0 +1,15 @@
+Changes from 0.14.6 to 0.14.7 - released 2026/10/22
+
+* Renamed
+
+- the Composer package is `se7enxweb/ggwebservices`. Before 0.14.7 it was published as `gggeek/ggwebservices`, the
+  name of the original package, which Packagist builds from the original author's repository, so the maintained
+  releases could not be installed under it. composer.json declares
+  `"replace": {"gggeek/ggwebservices": "self.version"}`, so the two names are never installed side by side
+
+* Improved
+
+- README.md uses the new name in every install and upgrade command and explains how to switch:
+  `composer remove gggeek/ggwebservices && composer require se7enxweb/ggwebservices`, or change the require line
+
+No code or settings changed.

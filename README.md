@@ -50,7 +50,7 @@ a remote service really answers.
 
 ### With Composer
 
-The package keeps its published name, `gggeek/ggwebservices`. This maintained copy lives at
+The package is `se7enxweb/ggwebservices`. This maintained copy lives at
 https://github.com/se7enxweb/ggwebservices; add it as a repository in your project's `composer.json` so Composer
 takes the maintained releases:
 
@@ -65,10 +65,19 @@ takes the maintained releases:
 Then, in the root of your installation:
 
 ```bash
-composer require gggeek/ggwebservices:^0.14.6
+composer require se7enxweb/ggwebservices:^0.14.7
 ```
 
 The legacy extension installer puts the files in `extension/ggwebservices`.
+
+### Package name
+
+Before 0.14.7 this extension was published as `gggeek/ggwebservices`, the name of Gaetano Giunta's original
+package. Since 0.14.7 the maintained releases are published as `se7enxweb/ggwebservices`, which replaces
+`gggeek/ggwebservices`, so the two are never installed side by side. To switch, run
+`composer remove gggeek/ggwebservices && composer require se7enxweb/ggwebservices`, or change the line in the
+`require` section of your `composer.json` to `"se7enxweb/ggwebservices": "^0.14.7"` and run
+`composer update se7enxweb/ggwebservices`.
 
 ### By hand
 
@@ -317,7 +326,7 @@ It rotates the log once it is larger than `MaxLogSize` and keeps `MaxLogrotateFi
 
 ## Upgrading
 
-Replace the `extension/ggwebservices` directory (or run `composer update gggeek/ggwebservices`), regenerate the
+Replace the `extension/ggwebservices` directory (or run `composer update se7enxweb/ggwebservices`), regenerate the
 autoloads and clear the caches, as in step 3 of the installation. Keep your settings in override files. The changes
 of each release are in [doc/changelogs](doc/changelogs).
 

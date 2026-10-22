@@ -1,131 +1,368 @@
-GG Webservices extension for eZ Publish
-=======================================
+# ggwebservices
 
-An extension that adds/improves the native capabilities of eZ Publish to work as
+Webservices for Exponential: serve and call JSON-RPC, XML-RPC, REST and SOAP, with a visual debugger in the
+administration interface.
 
-- webservices server
-- webservices client
+ggwebservices turns an Exponential installation into both
 
-with a visual webservices debugger thrown in for good measure
+- a **webservices server**: expose your own PHP functions (and the functions you already registered for ezjscore)
+  as JSON-RPC, XML-RPC, REST or SOAP services, with WSDL generated for SOAP, and with access control through roles
+  and policies;
+- a **webservices client**: call remote JSON-RPC, XML-RPC, REST, SOAP (with or without WSDL) and ezjscore servers
+  from PHP code or straight from templates;
 
+and adds a **WS Debugger** tab to the administration interface, where you can send any call to any server and see
+the request and response in full.
 
-Features
---------
+A proxy view lets JavaScript in your pages call remote servers across domains, and even across protocols.
 
-Allows to easily execute calls to remote servers using JSONRPC, XMLRPC and SOAP
-protocols or REST schemes (both from within php code and templates)
+It is meant for developers who integrate Exponential with other systems, and for administrators who need to see what
+a remote service really answers.
 
-Allows to expose existing functionality as JSONRPC or XMLRPC, REST and (better
-than eZ native) SOAP webservices, similar to what can already be done with SOAP
-and eZJSCore in any eZ Publish installation
+## Contents
 
-Allows to expose functionality as webservice regardless of the protocol used by
-the client - without having to duplicate code
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Permissions](#permissions)
+- [Cron jobs](#cron-jobs)
+- [Upgrading](#upgrading)
+- [Known limits](#known-limits)
+- [Troubleshooting](#troubleshooting)
+- [Further documentation](#further-documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Credits and history](#credits-and-history)
 
-Provides a proxy module allowing javascript code served by an eZ Publish server
-to execute cross-domain webservice calls (without resorting to jsonp or html tricks)
-and even cross-protocol calls
+## Requirements
 
-Allows easy debugging of webservice calls by providing a complete graphical
-interface for debugging
+- Exponential 6.x (the legacy kernel)
+- PHP 8.0 or later, with the extensions for the protocols you use:
+  - JSON-RPC and REST with JSON: `json` (always present in PHP 8);
+  - XML-RPC: `xmlrpc`, which is a PECL extension since PHP 8.0;
+  - SOAP and WSDL: `soap`;
+  - REST with XML: `simplexml`;
+  - optional: `curl` (HTTP 1.1 requests) and `zlib` (compressed requests and responses).
+- Optional: the ezjscore extension, to expose ezjscore functions as webservices and to load the JavaScript helpers.
 
-Adds support for WSDL in SOAP calls (both server-side and client-side)
+## Installation
 
-Improves the existing http client adding features such as support for more
-authentication schemes, compressed requests etc...
+### With Composer
 
-Allows usage of JSONRPC or XMLRPC (and eventually SOAP) to call functions exposed
-via the ezjscore extension API
+The package keeps its published name, `gggeek/ggwebservices`. This maintained copy lives at
+https://github.com/se7enxweb/ggwebservices; add it as a repository in your project's `composer.json` so Composer
+takes the maintained releases:
 
-Keeps the same API as the existing eZP SOAP classes for maximum interoperability
+```json
+{
+    "repositories": [
+        { "type": "vcs", "url": "https://github.com/se7enxweb/ggwebservices" }
+    ]
+}
+```
 
-And much more :-)
+Then, in the root of your installation:
 
-Prerequisites
--------------
+```bash
+composer require gggeek/ggwebservices:^0.14.6
+```
 
-- PHP 5 / eZP 4.0+
-- to execute/receive jsonrpc calls, the php JSON extension is needed
-- to execute/receive rest calls, the php SIMPLEXML or JSON extensions are needed
-- to execute/receive xmlrpc calls, the php XMLRPC extension is needed
-- to call remote services using wsdl descriptions the php SOAP extension is needed
-- to integrate with the ezjscore extension, eZP 4.2 is needed (and the ezjscore
-  extension too, of course)
-- to make ajax calls to the server itself using the integrated javascript library
-  the ezjscore extension is recommended. Any other javascript library for xmlrpc/
-  jsorpc can also do.
-- to receive soap/xmlrpc/jsonrpc/rest+post calls from users authenticated via the
-  standard session mechanism (such as e.g. ajax calls), the ezformtoken extension
-  has to be disabled
+The legacy extension installer puts the files in `extension/ggwebservices`.
 
-Basics
-------
-Server (eZPublish exposes webservices):
+### By hand
 
-- to receive xmlrpc, jsonrpc or 'rest' calls, you need to:
-    1. modify the configuration in ``wsproviders.ini`` and possibly in ``site.ini.append.php``
-    2. create a file ``extension/<xxx>/<jsonrpc|xmlrpc|rest>/initialize.php`` with the
-       php code to be exposed as webservice
-    3. manage access control to the exposed services via the administration interface
-       and/or configuration settings
+1. Download a release from https://github.com/se7enxweb/ggwebservices/releases (or `git clone` the repository)
+   and copy it to `extension/ggwebservices`. The directory must be called `ggwebservices`.
+2. Activate the extension in `settings/override/site.ini.append.php`:
 
-Client (eZPublish accesses webservices exposed by other systems):
+   ```ini
+   [ExtensionSettings]
+   ActiveExtensions[]=ggwebservices
+   ```
 
-- every remote webservice server that has to be accessed from the eZ Publish
-  server itself has to be defined in ``wsproviders.ini``
-- to call remote webservices from within templates use the template fetch function
-  ``fetch( 'webservices', 'call', hash( paramname, value, ... ) )``
-  Please remember to desactivate the view cache where needed for node templates
-  that execute webservice calls
-- to call remote webservices from php code use
-  ``ggeZWebServicesClient::call( $server, $metod, $params=array(), $options=array() );``
+3. Regenerate the autoload array and clear the caches, from the root of the installation:
 
-For more details on usage of the extension, look in the doc/ directory.
+   ```bash
+   php bin/php/ezpgenerateautoloads.php -e
+   php bin/php/ezcache.php --clear-all
+   ```
 
+4. If you use the client, add the log rotation cron job (see [Cron jobs](#cron-jobs)).
 
-Known limitations
------------------
+Log in to the administration interface: the **WS Debugger** tab is now in the top menu. In the admin4 design it
+shows the `terminal` icon.
 
-- support for WSDL is limited, as is support for SOAP 1.2
-- jsonrpc support is only available for version 1.0, not for 2.0
-- the ws client does not support automatic cookie management
-- the ws client does not support oauth authentication
-- the proxy view works exposing an xmlrpc+jsonrpc api. This means that it can not
-  be used to emulate the richer semantics of soap/rest calls. E.g. at the moment
-  it can not be used to send POST calls to upstream rest webservices
-- rest support is far from perfect, as the extension was developed based on rpc
-  semantics (call a *method* which takes a *hash of parameters*).
-  Currently:
-    * for the rest client, the parameters will be translated into query
-      string or http request payload, not into a slash-separated part of the url.
-    * for the rest server, there is no support for having slash-separated
-      parameters or complex routing rules
-- and much more: read doc/todo to get a detailed list of bits which could improve
+If logged-in users (for example Ajax calls from your pages) must send JSON-RPC, XML-RPC, REST or SOAP POST requests,
+note that the ezformtoken extension rejects POST requests without its form token.
 
+## Configuration
 
-FAQ
----
-  Q: how do I debug webservices without going insane?
-  
-  A1: you're a lucky guy, since this extension provides a nice graphical debugger
-      within the standard admin interface
-  
-  A2: when DebugSettings/DebugOutput and TemplateSettings/DevelopmentMode are
-      both enabled, the requests sent by the fetch function webservices/call
-      will be displayed as part of the standard debug output
-  
-  A3: by enabling logging, you n00b!
-      There is an ini setting in wsproviders.ini that controls verbosity for a
-      log file dedicated to webservices: var/<vardir>/log/webservices.log
+The extension reads `settings/wsproviders.ini`. Override it in `settings/override/wsproviders.ini.append.php` (or
+in a siteaccess), never in the extension's own file.
 
-  Q: how secure is this extension?
-  
-  A: the main author prides himself with being an extremely security-focused
-     developer - he learnt many things about webservices and security in the
-     infamous "lupii worm" incident, and later even worked as security consultant
-     for a short time.
-     Having said that, the codebase is by now quite large, and the amount of
-     functionality available staggering.
-     There is no guarantee whatsoever, either implicit or explicit, that using
-     it will not expose your data, or data of your customers, to fraudulent use.
-     If this poses a problem to you, please sponsor a security audit.
+### Server settings
+
+```ini
+[GeneralSettings]
+# Log level of the webservices log (var/<site>/log/webservices.log):
+# info, notice, debug, warning, error, critical or none
+Logging=warning
+# Size in bytes at which the log is rotated, and how many rotated files are kept
+MaxLogSize=2097152
+MaxLogrotateFiles=3
+# With the jsonrpc.php / xmlrpc.php controllers: always use the default siteaccess (enabled),
+# or the one matched by host, port ... (disabled)
+UseDefaultAccess=enabled
+# webservices/execute only: accept calls only from the IP addresses below
+ValidateClientIPs=disabled
+ValidClientIPs[]
+# Protocols accepted for incoming calls
+EnableJSONRPC=true
+EnableXMLRPC=true
+EnableREST=true
+# Make the functions of every protocol directory available through every protocol
+RegisterAllProtocolsFunctions=disabled
+# Serve the functions registered for ezjscore as JSON-RPC / XML-RPC methods too
+JscoreIntegration=enabled
+
+[DebuggerSettings]
+# YUI 2 version used by the debugger tree: the bundled 2.5.0, or "ezjscore"
+PreferredVersion[yui2]=2.5.0
+
+[ExtensionSettings]
+# Extensions with a jsonrpc/, xmlrpc/ or rest/ directory holding an initialize.php
+JSONRPCExtensions[]=ggwebservices
+XMLRPCExtensions[]=ggwebservices
+RESTExtensions[]=ggwebservices
+```
+
+SOAP is switched on by the kernel's `soap.ini`:
+
+```ini
+# settings/override/soap.ini.append.php
+[GeneralSettings]
+EnableSOAP=true
+```
+
+### Client settings: remote servers
+
+Every remote server you call gets a block of its own. The block name is the name you use in PHP and templates.
+
+```ini
+# settings/override/wsproviders.ini.append.php
+
+# A JSON-RPC server
+[weather]
+providerType=JSONRPC
+providerUri=https://api.example.com/jsonrpc
+Options[timeout]=30
+Options[login]=apiuser
+Options[password]=secret
+# 1 basic, 2 digest, 4 GSS-Negotiate, 8 NTLM
+Options[authType]=1
+
+# A SOAP server described by a WSDL
+[orders]
+providerType=PhpSOAP
+# empty: use the address in the WSDL
+providerUri=
+WSDL=https://erp.example.com/orders?wsdl
+Options[soapVersion]=1
+
+# A REST server returning JSON
+[catalog]
+providerType=REST
+providerUri=https://shop.example.com/api
+Options[method]=GET
+Options[accept]=application/json
+```
+
+`providerType` is one of `JSONRPC`, `XMLRPC`, `REST`, `SOAP`, `PhpSOAP` or `eZJSCore`. The other options
+(`requestCompression`, `acceptedCompression`, `forceCURL`, `cacheWSDL`, `nameVariable`, `responseType`,
+`requestType`) and the per-server proxy settings (`ProxyServer`, `ProxyUser`, `ProxyPassword`) are described in
+`settings/wsproviders.ini`.
+
+## Usage
+
+### Expose your own webservices
+
+1. Create `extension/myext/jsonrpc/initialize.php` (or `xmlrpc/` or `rest/`) and register your functions on
+   `$server`:
+
+   ```php
+   <?php
+   $server->registerFunction(
+       'fetchSyndicationFeedObjectList',  // name of the webservice and of the PHP function
+       array( 'feedID' => 'integer' ),     // parameters (names are used for WSDL)
+       'array',                            // return type
+       'Returns a list of ...'             // help text
+   );
+
+   function fetchSyndicationFeedObjectList( $feedID )
+   {
+       if ( $feedID <= 0 )
+       {
+           return new ggWebservicesFault( -1, 'Invalid feed ID: negative value' );
+       }
+       return array( 'a', 'b', 'c' );
+   }
+   ```
+
+2. Add the extension to the matching list in `wsproviders.ini.append.php`, for example
+   `JSONRPCExtensions[]=myext`, and make sure the protocol is enabled (`EnableJSONRPC=true`).
+3. Give the callers the `webservices/execute` policy (see [Permissions](#permissions)).
+4. Clients call `https://www.example.com/webservices/execute/jsonrpc` (or `xmlrpc`, `rest`, `phpsoap`). The WSDL
+   of a SOAP service is at `webservices/wsdl/<webservice>`, and `webservices/wsdl/<webservice>/(view)/html` shows
+   it as a page.
+
+```bash
+curl -s -H 'Content-Type: application/json' \
+     -d '{"method":"system.listMethods","params":[],"id":1}' \
+     https://www.example.com/webservices/execute/jsonrpc
+```
+
+Built-in methods: `system.listMethods`, `system.methodHelp`, `system.methodSignature` and `system.multiCall`
+(XML-RPC and JSON-RPC), and `ezp.authandexec( username, password, method, params )`, which logs a client in for
+one call when it cannot keep a session cookie.
+
+The files `jsonrpc.php` and `xmlrpc.php` are faster stand-alone controllers: copy them to the root of the
+installation and allow them in your rewrite rules. They have **no** permission checks: every registered webservice
+is open to everybody who can reach the URL.
+
+### Call remote webservices from templates
+
+```
+{def $result = fetch( 'webservices', 'call', hash(
+    'server', 'weather',
+    'method', 'forecast',
+    'parameters', array( 'Berlin' ),
+    'options', hash( 'timeout', 10 ) ) )}
+{$result|attribute( 'show' )}
+{undef $result}
+```
+
+The template operators `washxml`, `washxmlcomment` and `washxmlcdata` escape values for XML text, comments and
+CDATA sections. Turn the view cache off for pages that show live webservice results.
+
+### Call remote webservices from PHP
+
+```php
+$result = ggeZWebServicesClient::call( 'weather', 'forecast', array( 'Berlin' ), array( 'timeout' => 10 ) );
+```
+
+### Call webservices from JavaScript
+
+- Local server: `$.jsonrpc( method, params, options )` (jQuery) runs a JSON-RPC call on `webservices/execute/jsonrpc`.
+- Remote server through the proxy: `$.wsproxy( servername, method, params, options )`, which goes through
+  `webservices/proxy/jsonrpc/<servername>` (the remote server may use another protocol, such as SOAP).
+
+Load them with ezjscore:
+
+```
+{ezscript_require( array( 'ezjsc::jquery', 'ggwstemplate::jquery::json', 'ggwstemplate::jquery::jsonrpc' ) )}
+```
+
+YUI 3 versions (`Y.io.jsonrpc`, `Y.io.wsproxy`, loaded with `ggwstemplate::yui3::jsonrpc`) exist too, but need a YUI 3
+that the current ezjscore no longer ships. Examples are in [doc/samples](doc/samples).
+
+### The debugger
+
+Open the **WS Debugger** tab. Choose the protocol, the server address and the method, enter the parameters and send
+the call: the debugger shows the HTTP request and response and the decoded result. It can list a server's methods
+and their signatures, and it works with the servers you defined in `wsproviders.ini` as well as any other address.
+
+Calls the debugger sends to this same installation arrive as the anonymous user, unless you add your session cookie
+in the client options.
+
+With `DebugOutput` and `DevelopmentMode` enabled, the requests sent by `fetch( 'webservices', 'call' )` also show
+in the debug output, and `Logging=info` writes complete traces to `webservices.log`.
+
+### Cache item
+
+WSDL generated on the server is a cache item of its own, **webservices**:
+
+```bash
+php bin/php/ezcache.php --clear-id=webservices
+```
+
+## Permissions
+
+The `webservices` module has these policy functions:
+
+| Function | What it allows | Limitations |
+|---|---|---|
+| `execute` | Run incoming webservices through `webservices/execute`, see their WSDL/XSD | `Webservices` (single methods), `SiteAccess` |
+| `proxy` | Use `webservices/proxy` from JavaScript | `RemoteServers` |
+| `debugger` | Open the WS Debugger tab | |
+| `wsdl` | See the WSDL of every webservice, not only of those the user may run | |
+
+A good start for the Anonymous role is `execute` limited to `system.listMethods`, `system.methodHelp` and
+`system.methodSignature`: visitors see what is available and run nothing. Note that `system.multiCall` runs any
+webservice without checking the policies of the calls it contains. For clients that cannot log in, either set
+`ValidateClientIPs=enabled` with their addresses in `ValidClientIPs[]`, or give Anonymous access to
+`ezp.authandexec` and give the client a user account of its own. Details are in
+[doc/authentication.rst](doc/authentication.rst).
+
+## Cron jobs
+
+The client writes `var/<site>/log/webservices.log`, which the kernel does not rotate. Run the `rotatewslogs` cron
+part regularly:
+
+```bash
+php runcronjobs.php rotatewslogs
+```
+
+It rotates the log once it is larger than `MaxLogSize` and keeps `MaxLogrotateFiles` old files.
+
+## Upgrading
+
+Replace the `extension/ggwebservices` directory (or run `composer update gggeek/ggwebservices`), regenerate the
+autoloads and clear the caches, as in step 3 of the installation. Keep your settings in override files. The changes
+of each release are in [doc/changelogs](doc/changelogs).
+
+## Known limits
+
+- WSDL support is limited, and so is SOAP 1.2.
+- JSON-RPC is version 1.0 only.
+- The client does not manage cookies automatically and does not support OAuth.
+- The proxy speaks XML-RPC and JSON-RPC to the browser, so it cannot express REST verbs such as POST.
+- REST support follows RPC semantics: client parameters go into the query string or the body, not into the URL
+  path, and the server has no routing of path parameters.
+- More ideas are listed in [doc/todo](doc/todo).
+
+## Troubleshooting
+
+- **The WS Debugger tab is missing.** The user lacks the `webservices/debugger` policy, or the extension is not
+  active. Clear the INI cache (`php bin/php/ezcache.php --clear-tag=ini`).
+- **"Disabled protocol"** from `webservices/execute`: set `Enable<PROTOCOL>=true` in `wsproviders.ini` (SOAP: in
+  `soap.ini`).
+- **Access denied for a call.** The caller's role lacks `webservices/execute` for that method; calls without a session
+  run as Anonymous.
+- **POST calls of logged-in users fail.** See the ezformtoken note in the installation.
+- **Logs.** Raise `Logging` to `info` and read `var/<site>/log/webservices.log`.
+
+## Further documentation
+
+- [doc/usage.rst](doc/usage.rst): server and client set-up step by step
+- [doc/api.rst](doc/api.rst): modules, views, fetch functions, operators and built-in webservices
+- [doc/authentication.rst](doc/authentication.rst): authentication schemes for clients and servers
+- [doc/soap_readme.txt](doc/soap_readme.txt): SOAP questions and answers
+- [doc/samples](doc/samples): clients for real services, Ajax and template examples, an `initialize.php` example
+- [INSTALL](INSTALL): the short installation notes
+
+## Contributing
+
+Bug reports and pull requests are welcome at https://github.com/se7enxweb/ggwebservices. Please keep the code PHP 8
+compatible and run `php -l` on every file you change.
+
+## License
+
+GNU General Public License v2.0 (or any later version). See [LICENSE](LICENSE). The extension includes YUI 2.5.0
+(BSD license), phpxmlrpc 3.0.0 (BSD license) and the jQuery JSON plugin (MIT license).
+
+## Credits and history
+
+ggwebservices was written by Gaetano Giunta from 2009 to 2022 for eZ Publish, the content management system the
+Exponential legacy kernel grew out of, and was published as `gggeek/ggwebservices`. Its contributors added the French
+and Italian translations and many fixes. 7x maintains it for Exponential 6.x.

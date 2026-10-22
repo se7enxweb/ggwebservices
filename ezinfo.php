@@ -1,14 +1,21 @@
 <?php
+/**
+ * About-page information for the ggwebservices extension.
+ *
+ * @copyright (C) 2009-2022 Gaetano Giunta, (C) 2026 7x
+ * @license GNU General Public License v2.0 (or any later version)
+ */
 
 class ggwebservicesInfo
 {
     static function info()
     {
         return array(
-            'Name' => "<a href=\"https://github.com/gggeek/ggwebservices/\">GG Webservices extension</a>",
+            'Name' => "GG Webservices extension",
             'Version' => "0.14.5",
-            'Copyright' => "Copyright (C) 2009-2022 Gaetano Giunta",
-            'License' => "GNU General Public License v2.0",
+            'Copyright' => "Copyright (C) 2009-2022 Gaetano Giunta, Copyright (C) 2026 7x",
+            'License' => "GNU General Public License v2.0 (or any later version)",
+            'Info_url' => "https://github.com/se7enxweb/ggwebservices",
             'Includes the following third-party software' => array(
                 'Name' => '<a href="http://developer.yahoo.com/yui">YUI</a>',
                 'Version' => "2.5.0",

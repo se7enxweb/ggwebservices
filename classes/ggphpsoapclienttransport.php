@@ -9,6 +9,11 @@
 
 class ggPhpSOAPClientTransport extends SoapClient
 {
+    /// the ggPhpSOAPClient client starting the call
+    protected $client;
+    /// the request being sent
+    protected $request;
+
     // store a pointer to the ggPhpSOAPClient client starting the call
     function __construct( $wsdl, $options, $client=null, $request=null )
     {
@@ -17,7 +22,12 @@ class ggPhpSOAPClientTransport extends SoapClient
         $this->request = $request;
     }
 
-    function __doRequest( $request, $location, $action, $version, $one_way = 0 )
+    /**
+     * The trailing $uriParserClass parameter matches SoapClient::__doRequest() of PHP 8.5; earlier PHP 8 versions
+     * accept the extra optional parameter too. It is not used: the call goes through our own client.
+     */
+    #[\ReturnTypeWillChange]
+    function __doRequest( $request, $location, $action, $version, $one_way = false, $uriParserClass = null )
     {
         // inject the generated XML payload into the original request
         $this->request->decodeStream( $request );
